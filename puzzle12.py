@@ -1,3 +1,4 @@
+import math
 with open("puzzle12_input.txt") as f:
     data = f.readlines()
     data = [line.strip() for line in data]
@@ -7,25 +8,39 @@ with open("puzzle12_input.txt") as f:
 #'F7',
 #'R90',
 #'F11']
+def rotate(origin, point, angle):
+    # source: https://stackoverflow.com/a/34374437
+    ox, oy = origin
+    px, py = point
+    qx = ox + math.cos(angle) * (px - ox) - math.sin(angle) * (py - oy)
+    qy = oy + math.sin(angle) * (px - ox) + math.cos(angle) * (py - oy)
+    return int(round(qx)), int(round(qy))
 
-face = "E"
-e=0
-w=0 
-n=0
-s=0
+sh = {"x": 0, "y": 0}
+wp = {"x": 10, "y": 1}
 
 for ins in data:
-    e += (int(ins[1:]) if ins[0] == "E" or (face == "E" and ins[0] == "F") else 0)
-    w += (int(ins[1:]) if ins[0] == "W" or (face == "W" and ins[0] == "F") else 0)
-    n += (int(ins[1:]) if ins[0] == "N" or (face=="N" and ins[0] == "F") else 0)
-    s += (int(ins[1:]) if ins[0] == "S" or (face=="S" and ins[0] == "F") else 0)
+    # N, E, S, W move waypoint only
+    if ins[0] in ("N","E","W","S"):
+        wp["x"] += (int(ins[1:]) if ins[0] == "N" else 0)
+        wp["x"] -= (int(ins[1:]) if ins[0] == "S" else 0)
+        wp["y"] += (int(ins[1:]) if ins[0] == "E" else 0)
+        wp["y"] -= (int(ins[1:]) if ins[0] == "W" else 0)
+ 
+    # F moves ship
+    if ins[0] == "F":
+        sh["x"] += wp["x"] * int(ins[1:])
+        sh["y"] += wp["y"] * int(ins[1:])
+
+    # L/R rotate waypoint:
     if ins[0] in ("R","L"):
-        if ins in ("R180","L180"):
-            face = ("S" if face == "N" else "W" if face == "E" else "N" if face == "S" else "E" if face == "W" else "0")
-        elif ins in("R90","L270"):
-            face = ("S" if face == "E" else "W" if face == "S" else "N" if face == "W" else "E" if face == "N" else face)
-        elif ins in ("L90","R270"):
-            face = ("S" if face == "W" else "W" if face == "N" else "N" if face == "E" else "E" if face == "S" else face)
-    
-print("{'S': " + str(s) + " , 'E': " + str(e) + " , 'W': " + str(w) + " , 'N': " + str(n) + "}")
-print("TASK 1 SOLUTION: " + str(abs((e-w) + (n-s))))
+        if ins[0] == "R":
+            n = -int(ins[1:])
+        else:
+            n = int(ins[1:])
+        wp["x"], wp["y"] = rotate((0,0), (wp["x"],wp["y"]), math.radians(n))
+
+print(wp)
+print(sh)
+print("TASK 2 SOLUTION: " + str(abs(sh["x"] + abs(sh["y"]))))
+# 19276 too low, should be 42908
